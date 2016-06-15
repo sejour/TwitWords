@@ -1,0 +1,54 @@
+buildscript {
+	ext {
+        springBootVersion = '1.3.3.RELEASE'
+	}
+	repositories {
+		mavenCentral()
+  	}
+  	dependencies {
+    	classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+  	}
+}
+
+apply plugin: "java"
+apply plugin: "spring-boot"
+apply plugin: "eclipse"
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+jar {
+	baseName = "TwitFeature"
+  	version =  "1.0.0"
+}
+
+springBoot {
+    executable = true
+}
+
+configurations {
+    provided
+}
+
+sourceSets {
+    main { compileClasspath += configurations.provided }
+}
+
+eclipse {
+	project.name = 'TwitFeature'
+
+	classpath {
+    	plusConfigurations += [configurations.provided]
+		noExportConfigurations += [configurations.provided]
+	}
+}
+
+repositories {
+  	mavenCentral()
+}
+
+dependencies {
+  	compile("org.springframework.boot:spring-boot-starter-web")
+  	testCompile("org.springframework.boot:spring-boot-starter-test")
+  	provided("org.projectlombok:lombok:1.16.8")
+}

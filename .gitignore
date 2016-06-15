@@ -1,0 +1,10 @@
+#eclipse
+.project
+.classpath
+.settings
+.gradle
+bin
+build
+
+#Mac
+.DS_Store
