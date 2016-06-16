@@ -45,11 +45,15 @@ eclipse {
 
 repositories {
   	mavenCentral()
+  	maven {
+        url "http://maven.codelibs.org"
+    }
 }
 
 dependencies {
   	compile("org.springframework.boot:spring-boot-starter-web")
   	compile("org.twitter4j:twitter4j-core:4.0.2")
+  	compile("org.codelibs:lucene-analyzers-kuromoji-ipadic-neologd:6.0.0-20160613")
   	testCompile("org.springframework.boot:spring-boot-starter-test")
   	provided("org.projectlombok:lombok:1.16.8")
 }
