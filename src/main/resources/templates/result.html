@@ -3,21 +3,53 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>ツイート関連度検索サービス</title>
+<style>
+.center {
+	text-align: center;
+}
+#search-field {
+	width: 50%;
+	font-size: 22px;
+}
+#search-button {
+	width: 5%;
+	height: 32px;
+	margin: 0px 0px 0px 15px;
+	font-size: 22px;
+	border-style: none;
+	background-color: #0080ff;
+	color: #fff;
+}
+.tab {
+	border-collapse: collapse;
+	text-align: center;
+}
+.tab th {
+	vertical-align: top;
+	color: #333;
+	background-color: #afddfa;
+	border: 1px solid #b9b9b9;
+}
+.tab td {
+	background-color: #fff;
+	border: 1px solid #b9b9b9;
+}
+</style>
 </head>
 <body>
-<h1>ツイート関連語検索サービス</h1>
+	<h1 class="center">ツイート関連語検索サービス</h1>
 	<form action="#" th:action="@{./search}" th:object="${searchForm}" method="post">
-   	 	<p><input type="text" th:field="*{keyword}" /></p>
-    	<p><input type="submit" value="Submit" /></p>
+   	 	<p class="center"><input id="search-field" type="text" th:field="*{keyword}" /><input id="search-button" type="submit" value="検索" /></p>
 	</form>
-	<table border="1" align="center">
+	<table class="tab" align="center">
 		<tr><td>キーワード</td><td th:text="${result.keyword}"></td></tr>
 		<tr><td>ツイート件数</td><td th:text="${result.countOfTweets}"></td></tr>
 		<tr><td>全ツイートの単語数</td><td th:text="${result.countOfWords}"></td></tr>
 		<tr><td>単語種類数</td><td th:text="${result.countOfWordKinds}"></td></tr>
 		<tr><td>RateLimit</td><td th:text="${result.rateLimitStatus}"></td></tr>
 	</table>
-	<table border="1" align="center">
+	<br />
+	<table class="tab" align="center">
     	<tr>
       		<th>単語</th>
       		<th>品詞</th>
@@ -31,5 +63,6 @@
       		<td th:text="${word.probabilityString}">probability</td>
    	 	</tr>
  	</table>
+ 	<p class="center">© Shuka Takakuma</p>
 </body>
 </html>
