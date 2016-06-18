@@ -1,13 +1,10 @@
 package takakuma.shuka.controller;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
-import javax.servlet.ServletResponse;
 
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
@@ -19,32 +16,103 @@ import org.codelibs.neologd.ipadic.lucene.analysis.ja.dict.UserDictionary;
 import org.codelibs.neologd.ipadic.lucene.analysis.ja.tokenattributes.PartOfSpeechAttribute;
 import org.codelibs.neologd.ipadic.lucene.analysis.ja.tokenattributes.ReadingAttribute;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
 import takakuma.shuka.config.TwitterConfiguration;
 import takakuma.shuka.mecab.Morpheme;
 import takakuma.shuka.mecab.MorphologicalAnalyzer;
+import takakuma.shuka.model.Result;
 import takakuma.shuka.model.Word;
+import takakuma.shuka.model.form.SearchForm;
 import twitter4j.Query;
 import twitter4j.QueryResult;
+import twitter4j.RateLimitStatus;
 import twitter4j.Status;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 
-@RestController
-@EnableAutoConfiguration
+@Controller
 public class MainController {
 
 	@Autowired
 	private TwitterConfiguration twConfig;
 
-	@RequestMapping(value = "/hello", method = RequestMethod.GET)
-	public String hello() {
-		return "Hello World!";
+	@RequestMapping(value = "/", method = RequestMethod.GET)
+    public String index(Model model) {
+        model.addAttribute("searchForm", new SearchForm());
+        return "index";
+    }
+
+	private static int ACQUISITION_COUNT_MAX = 300;
+
+	@RequestMapping(value = "/search", method = RequestMethod.GET)
+	public String getSerarch(@RequestParam("keyword") String keyword, Model model) throws TwitterException, IOException {
+		Result result = this.searchAndCollect(keyword);
+        model.addAttribute("result", result);
+        model.addAttribute("searchForm", new SearchForm());
+        return "result";
+	}
+
+	@RequestMapping(value = "/search", method = RequestMethod.POST)
+	public String postSerarch(@ModelAttribute SearchForm searchForm, Model model) throws TwitterException, IOException {
+		Result result = this.searchAndCollect(searchForm.getKeyword());
+        model.addAttribute("result", result);
+        model.addAttribute("searchForm", new SearchForm());
+        return "result";
+	}
+
+	private Result searchAndCollect(String keyword) throws TwitterException {
+		Query query = new Query(keyword);
+		query.setLang("ja");
+		query.count(100);
+
+        Twitter twitter = this.twConfig.getInstance();
+
+        // ツイート検索
+        List<Status> tweets = new ArrayList<Status>();
+        while (tweets.size() < ACQUISITION_COUNT_MAX) {
+        	QueryResult result = twitter.search(query);
+        	tweets.addAll(result.getTweets());
+        	if ((query = result.nextQuery()) == null) break;
+        }
+
+        WordCollector collector = new WordCollector();
+
+        try (MorphologicalAnalyzer analyzer = new MorphologicalAnalyzer()) {
+        	// ツイートを形態素解析
+        	for (Status tweet : tweets) {
+        		String text = textNormalize(tweet.getText().replaceAll("http(s)?://([\\w-]+\\.)+[\\w-]+(/[\\w- ./?%&=]*)?", ""));
+        		for (Morpheme morpheme : analyzer.analyze(text)) {
+        			collector.add(morpheme);
+        		}
+        	}
+        }
+
+        List<Word> words = collector.getSortedCollection();
+
+        // 確率計算
+        double allCount = collector.getAdedCount();
+        for (Word word : words) {
+        	word.setProbability((double)word.count / allCount);
+        }
+
+        RateLimitStatus rls = twitter.getRateLimitStatus().get("/search/tweets");
+
+        return new Result(keyword, tweets.size(), collector.getAdedCount(), collector.getKindsCount(), words, rls.getLimit(), rls.getRemaining());
+	}
+
+	private static String textNormalize(String text) {
+		return Normalizer.normalize(text, Normalizer.Form.NFKC)
+				.replaceAll("[˗֊‐‑‒–⁃⁻₋−]+", "-")
+				.replaceAll("[﹣－ｰ—―─━ー]+", "ー")
+				.replaceAll("[~∼∾〜〰～]", "")
+				.replaceAll("[ 　]+",  " ")
+				.trim();
 	}
 
 	@RequestMapping(value = "/tw", method = RequestMethod.GET)
@@ -93,66 +161,6 @@ public class MainController {
         analyzer.close();
 
         return builder.toString();
-	}
-
-	private static int ACQUISITION_COUNT_MAX = 300;
-
-	@RequestMapping(value = "/collect", method = RequestMethod.GET)
-	public void serarchAndCollect(ServletResponse response, @RequestParam("keyword") String keyword) throws TwitterException, IOException {
-		Query query = new Query(keyword);
-		query.setLang("ja");
-		query.count(100);
-
-        Twitter twitter = this.twConfig.getInstance();
-
-        List<Status> tweets = new ArrayList<Status>();
-        while (tweets.size() < ACQUISITION_COUNT_MAX) {
-        	QueryResult result = twitter.search(query);
-        	tweets.addAll(result.getTweets());
-        	if ((query = result.nextQuery()) == null) break;
-        }
-
-        WordCollector collector = new WordCollector();
-
-        try (MorphologicalAnalyzer analyzer = new MorphologicalAnalyzer()) {
-        	// ツイートを形態素解析
-        	for (Status tweet : tweets) {
-        		String text = textNormalize(tweet.getText().replaceAll("http(s)?://([\\w-]+\\.)+[\\w-]+(/[\\w- ./?%&=]*)?", ""));
-        		for (Morpheme morpheme : analyzer.analyze(text)) {
-        			collector.add(morpheme);
-        		}
-        	}
-        }
-
-        response.setContentType("text/html; charset=UTF-8");
-        PrintWriter out = response.getWriter();
-
-        out.printf("<p>キーワード: %s</p>\n", keyword);
-        out.printf("<p>%d件のツイート</p>\n", tweets.size());
-        int wordsCount = collector.getAdedCount();
-        out.printf("<p>全ツイートの単語数: %d</p>\n", wordsCount);
-        out.printf("<p>単語種類数: %d</p>\n", collector.getKindsCount());
-
-        // 出現頻度順で出力
-        out.println("<table border=\"1\" align=\"center\">");
-        out.println("<tr><td>単語</td><td>品詞</td><td>出現回数</td><td>出現確率</td></tr>");
-        for (Word word : collector.getSortedCollection()) {
-        	String token = word.getWord();
-        	double p = (double)word.count / (double)wordsCount;
-        	out.printf("<tr><td><a href=\"?keyword=%s\">%s</a></td><td>%s</td><td>%d</td><td>%f%%</td></tr>\n", token, token, word.getPartOfSpeech(), word.count, p * 100.0);
-        }
-        out.println("</table>");
-
-        out.println("<p>LATELIMIT: " + twitter.getRateLimitStatus().get("/search/tweets").getRemaining() + "/" + twitter.getRateLimitStatus().get("/search/tweets").getLimit() + "</p>");
-	}
-
-	private static String textNormalize(String text) {
-		return Normalizer.normalize(text, Normalizer.Form.NFKC)
-				.replaceAll("[˗֊‐‑‒–⁃⁻₋−]+", "-")
-				.replaceAll("[﹣－ｰ—―─━ー]+", "ー")
-				.replaceAll("[~∼∾〜〰～]", "")
-				.replaceAll("[ 　]+",  " ")
-				.trim();
 	}
 
 }
