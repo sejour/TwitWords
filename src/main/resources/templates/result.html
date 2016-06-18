@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>ツイート関連度検索サービス</title>
+</head>
+<body>
+<h1>ツイート関連語検索サービス</h1>
+	<form action="#" th:action="@{./search}" th:object="${searchForm}" method="post">
+   	 	<p><input type="text" th:field="*{keyword}" /></p>
+    	<p><input type="submit" value="Submit" /></p>
+	</form>
+	<table border="1" align="center">
+		<tr><td>キーワード</td><td th:text="${result.keyword}"></td></tr>
+		<tr><td>ツイート件数</td><td th:text="${result.countOfTweets}"></td></tr>
+		<tr><td>全ツイートの単語数</td><td th:text="${result.countOfWords}"></td></tr>
+		<tr><td>単語種類数</td><td th:text="${result.countOfWordKinds}"></td></tr>
+		<tr><td>RateLimit</td><td th:text="${result.rateLimitStatus}"></td></tr>
+	</table>
+	<table border="1" align="center">
+    	<tr>
+      		<th>単語</th>
+      		<th>品詞</th>
+      		<th>出現回数</th>
+      		<th>出現確率</th>
+    	</tr>
+    	<tr th:each="word:${result.words}">
+      		<td><a href="./search" th:href="@{./search(keyword=${word.word})}" th:text="${word.word}">word</a></td>
+      		<td th:text="${word.partOfSpeech}">part of speech</td>
+      		<td th:text="${word.count}">count</td>
+      		<td th:text="${word.probabilityString}">probability</td>
+   	 	</tr>
+ 	</table>
+</body>
+</html>
