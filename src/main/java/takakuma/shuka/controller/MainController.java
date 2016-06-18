@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import javax.validation.Valid;
+
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.util.CharArraySet;
@@ -18,6 +20,7 @@ import org.codelibs.neologd.ipadic.lucene.analysis.ja.tokenattributes.ReadingAtt
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -52,6 +55,7 @@ public class MainController {
 
 	@RequestMapping(value = "/search", method = RequestMethod.GET)
 	public String getSerarch(@RequestParam("keyword") String keyword, Model model) throws TwitterException, IOException {
+		if (keyword == null || keyword.trim().isEmpty()) return "index";
 		Result result = this.searchAndCollect(keyword);
         model.addAttribute("result", result);
         model.addAttribute("searchForm", new SearchForm(keyword));
@@ -59,7 +63,8 @@ public class MainController {
 	}
 
 	@RequestMapping(value = "/search", method = RequestMethod.POST)
-	public String postSerarch(@ModelAttribute SearchForm searchForm, Model model) throws TwitterException, IOException {
+	public String postSerarch(@ModelAttribute @Valid SearchForm searchForm, BindingResult bindingResult, Model model) throws TwitterException, IOException {
+		if (bindingResult.hasErrors()) return "index";
 		String keyword = searchForm.getKeyword();
 		Result result = this.searchAndCollect(keyword);
         model.addAttribute("result", result);
