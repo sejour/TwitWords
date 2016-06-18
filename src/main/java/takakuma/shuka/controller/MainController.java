@@ -133,7 +133,8 @@ public class MainController {
         out.println("<table border=\"1\" align=\"center\">");
         out.println("<tr><td>単語</td><td>出現回数</td></tr>");
         for (Word word : collector.getSortedCollection()) {
-        	out.printf("<tr><td>%s</td><td>%d</td></tr>\n", word.getWord(), word.count);
+        	String token = word.getWord();
+        	out.printf("<tr><td><a href=\"?keyword=%s\">%s</a></td><td>%d</td></tr>\n", token, token, word.count);
         }
         out.println("</table>");
 
