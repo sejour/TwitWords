@@ -128,13 +128,17 @@ public class MainController {
 
         out.printf("<p>キーワード: %s</p>\n", keyword);
         out.printf("<p>%d件のツイート</p>\n", tweets.size());
+        int wordsCount = collector.getAdedCount();
+        out.printf("<p>全ツイートの単語数: %d</p>\n", wordsCount);
+        out.printf("<p>単語種類数: %d</p>\n", collector.getKindsCount());
 
         // 出現頻度順で出力
         out.println("<table border=\"1\" align=\"center\">");
-        out.println("<tr><td>単語</td><td>出現回数</td></tr>");
+        out.println("<tr><td>単語</td><td>出現回数</td><td>出現確率</td></tr>");
         for (Word word : collector.getSortedCollection()) {
         	String token = word.getWord();
-        	out.printf("<tr><td><a href=\"?keyword=%s\">%s</a></td><td>%d</td></tr>\n", token, token, word.count);
+        	double p = (double)word.count / (double)wordsCount;
+        	out.printf("<tr><td><a href=\"?keyword=%s\">%s</a></td><td>%d</td><td>%f%%</td></tr>\n", token, token, word.count, p * 100.0);
         }
         out.println("</table>");
 

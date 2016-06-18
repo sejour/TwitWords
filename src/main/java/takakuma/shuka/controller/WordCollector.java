@@ -10,6 +10,7 @@ import takakuma.shuka.model.Word;
 
 public class WordCollector {
 
+	int count = 0;
 	private Map<String, Word> words = new HashMap<String, Word>();
 
 	public WordCollector() {
@@ -17,8 +18,9 @@ public class WordCollector {
 	}
 
 	public void add(String word) {
-		Word w = this.words.get(word);
+		++count;
 
+		Word w = this.words.get(word);
 		if (w == null) {
 			this.words.put(word, new Word(word));
 			return;
@@ -34,6 +36,16 @@ public class WordCollector {
 			return word2.count.compareTo(word1.count);
 		});
 		return collection;
+	}
+
+	// 追加された全単語数
+	public int getAdedCount() {
+		return this.count;
+	}
+
+	// 単語の種類数
+	public int getKindsCount() {
+		return this.words.size();
 	}
 
 }
