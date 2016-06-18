@@ -54,15 +54,16 @@ public class MainController {
 	public String getSerarch(@RequestParam("keyword") String keyword, Model model) throws TwitterException, IOException {
 		Result result = this.searchAndCollect(keyword);
         model.addAttribute("result", result);
-        model.addAttribute("searchForm", new SearchForm());
+        model.addAttribute("searchForm", new SearchForm(keyword));
         return "result";
 	}
 
 	@RequestMapping(value = "/search", method = RequestMethod.POST)
 	public String postSerarch(@ModelAttribute SearchForm searchForm, Model model) throws TwitterException, IOException {
-		Result result = this.searchAndCollect(searchForm.getKeyword());
+		String keyword = searchForm.getKeyword();
+		Result result = this.searchAndCollect(keyword);
         model.addAttribute("result", result);
-        model.addAttribute("searchForm", new SearchForm());
+        model.addAttribute("searchForm", new SearchForm(keyword));
         return "result";
 	}
 

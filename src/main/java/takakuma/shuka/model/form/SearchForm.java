@@ -7,4 +7,10 @@ public class SearchForm {
 
 	private String keyword;
 
+	public SearchForm() {}
+
+	public SearchForm(String keyword) {
+		this.keyword = keyword;
+	}
+
 }
