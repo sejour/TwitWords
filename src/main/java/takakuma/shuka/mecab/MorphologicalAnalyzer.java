@@ -12,6 +12,8 @@ import org.codelibs.neologd.ipadic.lucene.analysis.ja.JapaneseAnalyzer;
 import org.codelibs.neologd.ipadic.lucene.analysis.ja.JapaneseTokenizer;
 import org.codelibs.neologd.ipadic.lucene.analysis.ja.JapaneseTokenizer.Mode;
 import org.codelibs.neologd.ipadic.lucene.analysis.ja.dict.UserDictionary;
+import org.codelibs.neologd.ipadic.lucene.analysis.ja.tokenattributes.PartOfSpeechAttribute;
+import org.codelibs.neologd.ipadic.lucene.analysis.ja.tokenattributes.ReadingAttribute;
 
 public class MorphologicalAnalyzer implements AutoCloseable {
 
@@ -25,15 +27,16 @@ public class MorphologicalAnalyzer implements AutoCloseable {
     	this.analyzer = new JapaneseAnalyzer(userDict, mode, stopSet, stopTags);
 	}
 
-	public List<String> analyze(String text) {
-		List<String> results = new ArrayList<String>();
+	public List<Morpheme> analyze(String text) {
+		List<Morpheme> results = new ArrayList<Morpheme>();
 
 		try (TokenStream tokenStream = this.analyzer.tokenStream("", text)) {
 			CharTermAttribute charAttr = tokenStream.addAttribute(CharTermAttribute.class);
+			PartOfSpeechAttribute posAttr = tokenStream.addAttribute(PartOfSpeechAttribute.class);
+            ReadingAttribute readAttr = tokenStream.addAttribute(ReadingAttribute.class);
         	tokenStream.reset();
         	while (tokenStream.incrementToken()) {
-        		String word = charAttr.toString();
-        		results.add(word);
+        		results.add(new Morpheme(charAttr.toString(), posAttr.getPartOfSpeech(), readAttr.getReading()));
         	}
         } catch (IOException e) {
 			e.printStackTrace();

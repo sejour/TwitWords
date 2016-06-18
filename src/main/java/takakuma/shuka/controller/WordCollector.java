@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import takakuma.shuka.mecab.Morpheme;
 import takakuma.shuka.model.Word;
 
 public class WordCollector {
@@ -17,16 +18,19 @@ public class WordCollector {
 
 	}
 
-	public void add(String word) {
+	public void add(Morpheme morpheme) {
 		++count;
+		String mw = morpheme.getWord();
+		String ms = morpheme.getPartOfSpeech();
+		String token = String.format("%s-%s", mw, ms);
 
-		Word w = this.words.get(word);
-		if (w == null) {
-			this.words.put(word, new Word(word));
+		Word word = this.words.get(token);
+		if (word == null) {
+			this.words.put(token, new Word(mw, ms));
 			return;
 		}
 
-		++w.count;
+		++word.count;
 	}
 
 	// Wordを出現頻度降順でソートして返す
