@@ -3,6 +3,7 @@ package takakuma.shuka.controller;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -93,15 +94,22 @@ public class MainController {
         return builder.toString();
 	}
 
+	private static int ACQUISITION_COUNT_MAX = 300;
+
 	@RequestMapping(value = "/collect", method = RequestMethod.GET)
 	public void serarchAndCollect(ServletResponse response, @RequestParam("keyword") String keyword) throws TwitterException, IOException {
-        // search tweet
 		Query query = new Query(keyword);
 		query.setLang("ja");
 		query.count(100);
+
         Twitter twitter = this.twConfig.getInstance();
-        QueryResult result = twitter.search(query);
-        List<Status> tweets = result.getTweets();
+
+        List<Status> tweets = new ArrayList<Status>();
+        while (tweets.size() < ACQUISITION_COUNT_MAX) {
+        	QueryResult result = twitter.search(query);
+        	tweets.addAll(result.getTweets());
+        	if ((query = result.nextQuery()) == null) break;
+        }
 
         WordCollector collector = new WordCollector();
 
@@ -117,6 +125,9 @@ public class MainController {
 
         response.setContentType("text/html; charset=UTF-8");
         PrintWriter out = response.getWriter();
+
+        out.printf("<p>キーワード: %s</p>\n", keyword);
+        out.printf("<p>%d件のツイート</p>\n", tweets.size());
 
         // 出現頻度順で出力
         out.println("<table border=\"1\" align=\"center\">");
