@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import takakuma.shuka.config.TwitterConfiguration;
+import takakuma.shuka.mecab.Morpheme;
 import takakuma.shuka.mecab.MorphologicalAnalyzer;
 import takakuma.shuka.model.Word;
 import twitter4j.Query;
@@ -117,8 +118,8 @@ public class MainController {
         	// ツイートを形態素解析
         	for (Status tweet : tweets) {
         		String text = textNormalize(tweet.getText().replaceAll("http(s)?://([\\w-]+\\.)+[\\w-]+(/[\\w- ./?%&=]*)?", ""));
-        		for (String word: analyzer.analyze(text)) {
-        			collector.add(word);
+        		for (Morpheme morpheme : analyzer.analyze(text)) {
+        			collector.add(morpheme);
         		}
         	}
         }
@@ -134,11 +135,11 @@ public class MainController {
 
         // 出現頻度順で出力
         out.println("<table border=\"1\" align=\"center\">");
-        out.println("<tr><td>単語</td><td>出現回数</td><td>出現確率</td></tr>");
+        out.println("<tr><td>単語</td><td>品詞</td><td>出現回数</td><td>出現確率</td></tr>");
         for (Word word : collector.getSortedCollection()) {
         	String token = word.getWord();
         	double p = (double)word.count / (double)wordsCount;
-        	out.printf("<tr><td><a href=\"?keyword=%s\">%s</a></td><td>%d</td><td>%f%%</td></tr>\n", token, token, word.count, p * 100.0);
+        	out.printf("<tr><td><a href=\"?keyword=%s\">%s</a></td><td>%s</td><td>%d</td><td>%f%%</td></tr>\n", token, token, word.getPartOfSpeech(), word.count, p * 100.0);
         }
         out.println("</table>");
 
